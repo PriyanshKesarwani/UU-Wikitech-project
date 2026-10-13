@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -255,141 +256,53 @@ export default function GalleryPage() {
   return (
     <main className="relative isolate overflow-hidden bg-transparent">
       {/* =====================================================
-          ANIMATED GRADIENT + POLKA DOT BACKGROUND
+          PASTEL GRADIENT + FADING GRID BACKGROUND
       ===================================================== */}
 
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background: `
+            radial-gradient(
+              circle at 15% 10%,
+              rgba(210, 238, 250, 0.75) 0%,
+              rgba(210, 238, 250, 0) 42%
+            ),
+            radial-gradient(
+              circle at 85% 10%,
+              rgba(215, 250, 225, 0.8) 0%,
+              rgba(215, 250, 225, 0) 45%
+            ),
+            radial-gradient(
+              circle at 80% 90%,
+              rgba(255, 245, 235, 0.65) 0%,
+              rgba(255, 245, 235, 0) 40%
+            ),
+            #f8fcfa
+          `,
+        }}
+      >
+        {/* Subtle grid with a fading effect toward the bottom */}
         <div
           className="absolute inset-0"
           style={{
-            background: `
-              radial-gradient(
-                circle at 15% 10%,
-                rgba(210, 238, 250, 0.75) 0%,
-                rgba(210, 238, 250, 0) 42%
+            backgroundImage: `
+              linear-gradient(
+                rgba(100, 116, 139, 0.12) 1px,
+                transparent 1px
               ),
-              radial-gradient(
-                circle at 85% 10%,
-                rgba(215, 250, 225, 0.8) 0%,
-                rgba(215, 250, 225, 0) 45%
-              ),
-              radial-gradient(
-                circle at 80% 90%,
-                rgba(255, 245, 235, 0.65) 0%,
-                rgba(255, 245, 235, 0) 40%
-              ),
-              #f8fcfa
+              linear-gradient(
+                90deg,
+                rgba(100, 116, 139, 0.12) 1px,
+                transparent 1px
+              )
             `,
-          }}
-        />
-
-        {/* Animated polka dots */}
-        <motion.div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(65, 95, 115, 0.22) 1.4px, transparent 1.6px)",
-            backgroundSize: "28px 28px",
-          }}
-          animate={{
-            backgroundPosition: ["0px 0px", "28px 28px"],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        />
-
-        {/* Moving red dot */}
-        <motion.div
-          className="absolute left-[33%] top-[23%] h-5 w-5 rounded-full bg-red-500/90 shadow-sm"
-          animate={{
-            x: [0, 16, -8, 0],
-            y: [0, -24, 12, 0],
-            scale: [1, 1.08, 0.94, 1],
-          }}
-          transition={{
-            duration: 9,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-
-        {/* Moving green dot */}
-        <motion.div
-          className="absolute left-[66%] top-[43%] h-4 w-4 rounded-full bg-green-600/85 shadow-sm"
-          animate={{
-            x: [0, -18, 8, 0],
-            y: [0, 20, -14, 0],
-            scale: [1, 0.9, 1.1, 1],
-          }}
-          transition={{
-            duration: 11,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-        />
-
-        {/* Moving blue dot */}
-        <motion.div
-          className="absolute left-[41%] top-[55%] h-6 w-6 rounded-full bg-blue-600/80 shadow-sm"
-          animate={{
-            x: [0, 20, -12, 0],
-            y: [0, -18, 20, 0],
-            scale: [1, 1.12, 0.92, 1],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
-        />
-
-        {/* Moving orange dot */}
-        <motion.div
-          className="absolute left-[83%] top-[72%] h-3 w-3 rounded-full bg-orange-400/80"
-          animate={{
-            x: [0, -14, 10, 0],
-            y: [0, 18, -20, 0],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5,
-          }}
-        />
-
-        {/* Moving coral dot */}
-        <motion.div
-          className="absolute left-[17%] top-[76%] h-3.5 w-3.5 rounded-full bg-red-400/75"
-          animate={{
-            x: [0, 12, -16, 0],
-            y: [0, -16, 10, 0],
-          }}
-          transition={{
-            duration: 13,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1.5,
-          }}
-        />
-
-        {/* Moving light-blue dot */}
-        <motion.div
-          className="absolute left-[76%] top-[18%] h-5 w-5 rounded-full bg-blue-500/70"
-          animate={{
-            x: [0, -12, 14, 0],
-            y: [0, 16, -12, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 3,
+            backgroundSize: "52px 52px",
+            backgroundPosition: "center center",
+            maskImage: "linear-gradient(to bottom, black 75%, transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, black 75%, transparent)",
           }}
         />
       </div>
