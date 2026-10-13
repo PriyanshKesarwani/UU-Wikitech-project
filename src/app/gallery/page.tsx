@@ -1,201 +1,880 @@
 "use client";
 
-import { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  FaArrowLeft,
-  FaArrowRight,
-  FaTimes,
-  FaYoutube,
-  FaInstagram,
-  FaExpand,
-  FaPlay,
-} from "react-icons/fa";
-
+import { motion, AnimatePresence } from "framer-motion";
+import Events from "@/data/gallery/Event";
 import Images from "@/data/gallery/images";
 
-const videos = [
-  {
-    id: "ysz5S6PUM-U",
-    title: "WikiClub Tech Event",
-    description:
-      "Explore one of the exciting events and activities organized by WikiClub Tech.",
-  },
-  {
-    id: "ScMzIvxBSi4",
-    title: "WikiClub Tech Highlights",
-    description:
-      "A collection of memorable moments from the WikiClub Tech community.",
-  },
-];
-
-const highlights = [
-  {
-    type: "youtube",
-    id: "ZLPscXdb5k0",
-    title: "WikiClub Tech Short",
-    description:
-      "A quick glimpse into the WikiClub Tech community.",
-  },
-  {
-    type: "instagram",
-    id: "DXbjqlojJpZ",
-    title: "WikiClub Tech Reel",
-    description:
-      "A memorable moment from our community.",
-  },
-];
-
 export default function GalleryPage() {
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  /* =========================================================
+     FEATURED MEMORIES
+  ========================================================= */
 
-  // Normal videos
-  const [hoveredVideo, setHoveredVideo] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const totalImages = Images.length;
 
-  // Shorts + Reels
+  const previousIndex =
+    totalImages > 0 ? (activeIndex - 1 + totalImages) % totalImages : 0;
+
+  const nextIndex = totalImages > 0 ? (activeIndex + 1) % totalImages : 0;
+
+  const goNext = () => {
+    if (totalImages > 0) {
+      setActiveIndex((current) => (current + 1) % totalImages);
+    }
+  };
+
+  const goPrevious = () => {
+    if (totalImages > 0) {
+      setActiveIndex(
+        (current) => (current - 1 + totalImages) % totalImages
+      );
+    }
+  };
+
+  const featuredCaptions = [
+    {
+      title: "Freshers' Event",
+      description: "Welcoming new faces and creating new memories.",
+    },
+    {
+      title: "Campus Memories",
+      description: "Moments that make our college journey special.",
+    },
+    {
+      title: "Team Spirit",
+      description: "Growing, connecting, and learning together.",
+    },
+    {
+      title: "Hackathon",
+      description: "Turning creative ideas into innovative solutions.",
+    },
+    {
+      title: "Coding in Action",
+      description: "Building projects and solving real challenges.",
+    },
+    {
+      title: "Problem Solving",
+      description: "Collaborating to tackle challenging problems.",
+    },
+    {
+      title: "Innovation",
+      description: "Exploring technology and thinking beyond limits.",
+    },
+    {
+      title: "Workshop",
+      description: "Learning new skills through hands-on experience.",
+    },
+    {
+      title: "Learning Together",
+      description: "Sharing knowledge and growing as a community.",
+    },
+    {
+      title: "New Skills, New Ideas",
+      description: "Discovering new possibilities with technology.",
+    },
+  ];
+
+  /* =========================================================
+     PHOTO GALLERY
+  ========================================================= */
+
+  const featuredEvents = Events.slice(0, 3);
+  const moreEvents = Events.slice(3);
+
+  const [expandedEvents, setExpandedEvents] = useState<
+    Record<string, boolean>
+  >({});
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+
+  const toggleEvent = (eventId: string) => {
+    setExpandedEvents((current) => ({
+      ...current,
+      [eventId]: !current[eventId],
+    }));
+  };
+
+  /* =========================================================
+     VIDEO DATA
+  ========================================================= */
+
+  const standardVideos = [
+    {
+      id: "ysz5S6PUM-U",
+      title: "WikiClub Tech Event",
+    },
+    {
+      id: "ScMzIvxBSi4",
+      title: "WikiClub Tech Highlights",
+    },
+  ];
+
+  const highlightVideos = [
+    {
+      id: "ZLPscXdb5k0",
+      title: "WikiClub Tech Short",
+    },
+  ];
+
+  const instagramVideos = [
+    {
+      id: "DXbjqlojJpZ",
+      title: "WikiClub Tech Reel",
+    },
+  ];
+
+  const allHighlights = [
+    ...highlightVideos.map((video) => ({
+      ...video,
+      platform: "youtube" as const,
+    })),
+    ...instagramVideos.map((video) => ({
+      ...video,
+      platform: "instagram" as const,
+    })),
+  ];
+
+  /* =========================================================
+     FEATURED HIGHLIGHTS AUTOPLAY + AUTO-SCROLL
+  ========================================================= */
+
   const [hoveredHighlight, setHoveredHighlight] = useState<string | null>(
     null
   );
 
-  const nextImage = () => {
-    if (selectedImage === null) return;
+  const highlightsTrackRef = useRef<HTMLDivElement>(null);
 
-    setSelectedImage((selectedImage + 1) % Images.length);
-  };
+  useEffect(() => {
+    const track = highlightsTrackRef.current;
 
-  const previousImage = () => {
-    if (selectedImage === null) return;
+    if (!track || allHighlights.length <= 1) return;
 
-    setSelectedImage(
-      (selectedImage - 1 + Images.length) % Images.length
+    const interval = window.setInterval(() => {
+      if (hoveredHighlight !== null) return;
+
+      const firstCard = track.querySelector<HTMLElement>("a");
+
+      if (!firstCard) return;
+
+      const cardWidth = firstCard.getBoundingClientRect().width + 16;
+      const maxScroll = track.scrollWidth - track.clientWidth;
+
+      if (maxScroll <= 5) return;
+
+      if (track.scrollLeft >= maxScroll - 5) {
+        track.scrollTo({
+          left: 0,
+          behavior: "smooth",
+        });
+      } else {
+        track.scrollBy({
+          left: cardWidth,
+          behavior: "smooth",
+        });
+      }
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, [allHighlights.length, hoveredHighlight]);
+
+  /* =========================================================
+     YOUTUBE HOVER VIDEO
+  ========================================================= */
+
+  const HoverVideo = ({
+    id,
+    title,
+    aspect = "16/9",
+  }: {
+    id: string;
+    title: string;
+    aspect?: "16/9" | "9/16";
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const thumbnail = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+
+    return (
+      <div
+        className={`group relative overflow-hidden rounded-2xl bg-black shadow-lg ${
+          aspect === "9/16" ? "aspect-[9/16]" : "aspect-video"
+        }`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <Image
+          src={thumbnail}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className={`object-cover transition-all duration-500 ${
+            isHovered ? "scale-105 opacity-0" : "scale-100 opacity-100"
+          }`}
+        />
+
+        {isHovered && (
+          <iframe
+            className="pointer-events-none absolute inset-0 h-full w-full border-0"
+            src={`https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&playsinline=1&rel=0`}
+            title={title}
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            tabIndex={-1}
+          />
+        )}
+
+        {!isHovered && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 shadow-xl transition-transform duration-300 group-hover:scale-110">
+              <svg
+                className="ml-1 h-6 w-6 text-black"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        )}
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-5 pt-16">
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
+        </div>
+
+        {isHovered && (
+          <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+            Playing preview
+          </div>
+        )}
+      </div>
     );
   };
 
   return (
-    <main
-      className="min-h-screen overflow-hidden text-[#18252f]"
-      style={{
-        background: `
-          radial-gradient(
-            circle at 15% 10%,
-            rgba(210, 238, 250, 0.75) 0%,
-            rgba(210, 238, 250, 0) 42%
-          ),
-          radial-gradient(
-            circle at 85% 10%,
-            rgba(215, 250, 225, 0.8) 0%,
-            rgba(215, 250, 225, 0) 45%
-          ),
-          radial-gradient(
-            circle at 80% 90%,
-            rgba(255, 245, 235, 0.65) 0%,
-            rgba(255, 245, 235, 0) 40%
-          ),
-          #f8fcfa
-        `,
-      }}
-    >
-      {/* =========================================================
-          HERO
-      ========================================================= */}
+    <main className="relative isolate overflow-hidden bg-transparent">
+      {/* =====================================================
+          ANIMATED GRADIENT + POLKA DOT BACKGROUND
+      ===================================================== */}
 
-      <section className="px-6 pb-20 pt-32 text-center sm:px-10 lg:px-20">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(
+                circle at 15% 10%,
+                rgba(210, 238, 250, 0.75) 0%,
+                rgba(210, 238, 250, 0) 42%
+              ),
+              radial-gradient(
+                circle at 85% 10%,
+                rgba(215, 250, 225, 0.8) 0%,
+                rgba(215, 250, 225, 0) 45%
+              ),
+              radial-gradient(
+                circle at 80% 90%,
+                rgba(255, 245, 235, 0.65) 0%,
+                rgba(255, 245, 235, 0) 40%
+              ),
+              #f8fcfa
+            `,
+          }}
+        />
+
+        {/* Animated polka dots */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="mx-auto max-w-4xl"
-        >
-          <p className="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-blue-600">
-            WikiClub Tech
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, rgba(65, 95, 115, 0.22) 1.4px, transparent 1.6px)",
+            backgroundSize: "28px 28px",
+          }}
+          animate={{
+            backgroundPosition: ["0px 0px", "28px 28px"],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+
+        {/* Moving red dot */}
+        <motion.div
+          className="absolute left-[33%] top-[23%] h-5 w-5 rounded-full bg-red-500/90 shadow-sm"
+          animate={{
+            x: [0, 16, -8, 0],
+            y: [0, -24, 12, 0],
+            scale: [1, 1.08, 0.94, 1],
+          }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Moving green dot */}
+        <motion.div
+          className="absolute left-[66%] top-[43%] h-4 w-4 rounded-full bg-green-600/85 shadow-sm"
+          animate={{
+            x: [0, -18, 8, 0],
+            y: [0, 20, -14, 0],
+            scale: [1, 0.9, 1.1, 1],
+          }}
+          transition={{
+            duration: 11,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+        />
+
+        {/* Moving blue dot */}
+        <motion.div
+          className="absolute left-[41%] top-[55%] h-6 w-6 rounded-full bg-blue-600/80 shadow-sm"
+          animate={{
+            x: [0, 20, -12, 0],
+            y: [0, -18, 20, 0],
+            scale: [1, 1.12, 0.92, 1],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
+        />
+
+        {/* Moving orange dot */}
+        <motion.div
+          className="absolute left-[83%] top-[72%] h-3 w-3 rounded-full bg-orange-400/80"
+          animate={{
+            x: [0, -14, 10, 0],
+            y: [0, 18, -20, 0],
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
+        />
+
+        {/* Moving coral dot */}
+        <motion.div
+          className="absolute left-[17%] top-[76%] h-3.5 w-3.5 rounded-full bg-red-400/75"
+          animate={{
+            x: [0, 12, -16, 0],
+            y: [0, -16, 10, 0],
+          }}
+          transition={{
+            duration: 13,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1.5,
+          }}
+        />
+
+        {/* Moving light-blue dot */}
+        <motion.div
+          className="absolute left-[76%] top-[18%] h-5 w-5 rounded-full bg-blue-500/70"
+          animate={{
+            x: [0, -12, 14, 0],
+            y: [0, 16, -12, 0],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 3,
+          }}
+        />
+      </div>
+
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
+      <section className="relative z-10 px-6 pb-8 pt-28 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-7xl text-center">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">
+            WikiClub Tech UU
           </p>
 
-          <h1 className="text-5xl font-black tracking-tight text-black sm:text-6xl lg:text-7xl">
-            Memories & Moments
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            Gallery
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-            Explore the moments, events, activities and memories that make
-            WikiClub Tech special.
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-gray-600 sm:text-lg">
+            Explore our events, memories, videos, and highlights from WikiClub
+            Tech.
           </p>
-        </motion.div>
+        </div>
       </section>
 
-      {/* =========================================================
-          PHOTO GALLERY
-      ========================================================= */}
+      {/* =====================================================
+          FEATURED MEMORIES
+      ===================================================== */}
 
-      <section
-        id="photo-gallery"
-        className="px-6 py-16 sm:px-10 lg:px-20"
-      >
+      <section className="relative z-10 px-6 py-14 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mb-10"
-          >
-            <p className="mb-2 text-sm font-bold uppercase tracking-[0.25em] text-blue-600">
-              Memories
-            </p>
-
-            <h2 className="text-4xl font-black text-black sm:text-5xl">
-              Photo Gallery
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Featured Memories
             </h2>
 
-            <p className="mt-4 max-w-2xl text-gray-600">
-              A collection of moments captured during WikiClub Tech events
-              and activities.
+            <p className="mx-auto mt-3 max-w-2xl text-gray-600">
+              A few special moments from WikiClub Tech.
             </p>
-          </motion.div>
+          </div>
 
-          {/* Masonry Gallery */}
+          <div className="relative mx-auto h-[360px] max-w-6xl overflow-hidden sm:h-[450px] lg:h-[510px]">
+            {Images.map((image: any, index: number) => {
+              let position: "left" | "center" | "right" | "hidden" = "hidden";
 
-          <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
-            {Images.map((image, index) => (
-              <motion.button
-                key={`${image.src}-${index}`}
+              if (index === activeIndex) {
+                position = "center";
+              } else if (index === previousIndex) {
+                position = "left";
+              } else if (index === nextIndex) {
+                position = "right";
+              }
+
+              return (
+                <motion.div
+                  key={`featured-${index}`}
+                  drag={index === activeIndex ? "x" : false}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(_, info) => {
+                    if (Math.abs(info.offset.x) > 70) {
+                      if (info.offset.x < 0) goNext();
+                      else goPrevious();
+                    }
+                  }}
+                  initial={false}
+                  animate={{
+                    x:
+                      position === "left"
+                        ? "-140%"
+                        : position === "right"
+                          ? "40%"
+                          : "-50%",
+                    scale:
+                      position === "center"
+                        ? 1
+                        : position === "left" || position === "right"
+                          ? 0.72
+                          : 0.5,
+                    opacity:
+                      position === "center"
+                        ? 1
+                        : position === "left" || position === "right"
+                          ? 0.65
+                          : 0,
+                    filter: position === "center" ? "blur(0px)" : "blur(5px)",
+                    zIndex:
+                      position === "center"
+                        ? 20
+                        : position === "left" || position === "right"
+                          ? 10
+                          : 0,
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className="absolute left-1/2 top-1/2 h-[300px] w-[72%] -translate-y-1/2 overflow-hidden rounded-3xl shadow-2xl sm:h-[390px] sm:w-[65%] lg:h-[450px] lg:w-[62%]"
+                >
+                  <Image
+                    src={image.src}
+                    alt={image.alt || `Featured memory ${index + 1}`}
+                    fill
+                    priority={index === activeIndex}
+                    sizes="(max-width: 768px) 90vw, 65vw"
+                    className="select-none object-cover"
+                    draggable={false}
+                  />
+
+                  {position === "center" && (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-5 pb-6 pt-20 sm:px-8 sm:pb-8">
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="max-w-2xl"
+                      >
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-300 sm:text-sm">
+                          Featured Memory
+                        </p>
+
+                        <h3 className="text-xl font-bold leading-tight text-white drop-shadow-lg sm:text-2xl md:text-3xl">
+                          {featuredCaptions[index]?.title ||
+                            image.alt ||
+                            `Featured Memory ${index + 1}`}
+                        </h3>
+
+                        <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85 drop-shadow sm:text-base">
+                          {featuredCaptions[index]?.description ||
+                            "A special moment from the WikiClub Tech community."}
+                        </p>
+                      </motion.div>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={goPrevious}
+              aria-label="Previous memory"
+              className="absolute left-2 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-2xl text-gray-800 shadow-lg backdrop-blur transition hover:scale-110 sm:left-6"
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="Next memory"
+              className="absolute right-2 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-2xl text-gray-800 shadow-lg backdrop-blur transition hover:scale-110 sm:right-6"
+            >
+              ›
+            </button>
+          </div>
+
+          <div className="mt-6 flex justify-center gap-2">
+            {Images.map((_: any, index: number) => (
+              <button
+                key={`dot-${index}`}
                 type="button"
-                onClick={() => setSelectedImage(index)}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.5,
-                  delay: Math.min(index * 0.05, 0.3),
-                }}
-                whileHover={{ y: -5 }}
-                className="group relative mb-5 block w-full overflow-hidden rounded-3xl bg-white text-left shadow-sm"
-              >
-                <Image
-                  src={image.src}
-                  alt={image.alt}
-                  width={900}
-                  height={700}
-                  unoptimized
-                  className="h-auto w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-
-                <div className="pointer-events-none absolute inset-0 bg-black/0 transition duration-300 group-hover:bg-black/20" />
-
-                <div className="pointer-events-none absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-gray-800 opacity-0 shadow-lg transition duration-300 group-hover:opacity-100">
-                  <FaExpand size={14} />
-                </div>
-              </motion.button>
+                onClick={() => setActiveIndex(index)}
+                aria-label={`Go to memory ${index + 1}`}
+                className={`h-2.5 rounded-full transition-all ${
+                  index === activeIndex
+                    ? "w-8 bg-blue-600"
+                    : "w-2.5 bg-gray-300 hover:bg-gray-400"
+                }`}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* =========================================================
-          IMAGE LIGHTBOX
-      ========================================================= */}
+      {/* =====================================================
+          PHOTO GALLERY
+      ===================================================== */}
+
+      <section className="relative z-10 px-6 py-16 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Photo Gallery
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-2xl text-gray-600">
+              Explore memories organized by event.
+            </p>
+          </div>
+
+          <div className="space-y-14">
+            {featuredEvents.map((event: any) => {
+              const isExpanded = expandedEvents[event.id] ?? false;
+              const visibleImages = isExpanded
+                ? event.images
+                : event.images.slice(0, 3);
+              const remainingCount = event.images.length - 3;
+
+              return (
+                <div
+                  key={event.id}
+                  className="overflow-hidden rounded-3xl border border-gray-100 bg-white/80 p-5 shadow-sm backdrop-blur sm:p-7"
+                >
+                  <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex gap-4">
+                      <div className="mt-1 h-14 w-1.5 shrink-0 rounded-full bg-blue-600" />
+
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          {event.title}
+                        </h3>
+
+                        <p className="mt-1 max-w-2xl text-gray-600">
+                          {event.subtitle}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="w-fit shrink-0 rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+                      {event.date}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {visibleImages.map((image: any, imageIndex: number) => (
+                      <button
+                        key={`${event.id}-${imageIndex}`}
+                        type="button"
+                        onClick={() => setSelectedImage(image.src)}
+                        className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100 text-left"
+                      >
+                        <Image
+                          src={image.src}
+                          alt={image.alt || `${event.title} ${imageIndex + 1}`}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover transition duration-500 group-hover:scale-110"
+                        />
+
+                        <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/10" />
+                      </button>
+                    ))}
+                  </div>
+
+                  {event.images.length > 3 && (
+                    <div className="mt-6 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleEvent(event.id)}
+                        className="rounded-full border border-blue-200 bg-white px-5 py-2.5 text-sm font-semibold text-blue-600 transition hover:border-blue-600 hover:bg-blue-600 hover:text-white"
+                      >
+                        {isExpanded
+                          ? "Show Less"
+                          : `See More Images (${remainingCount})`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          MORE EVENTS
+      ===================================================== */}
+
+      {moreEvents.length > 0 && (
+        <section className="relative z-10 px-6 py-16 sm:px-10 lg:px-16">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-10 text-center">
+              <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+                More Events
+              </h2>
+
+              <p className="mt-3 text-gray-600">
+                Discover more moments from WikiClub Tech.
+              </p>
+            </div>
+
+            <div className="flex snap-x snap-mandatory gap-6 overflow-x-auto pb-5 [scrollbar-width:thin]">
+              {moreEvents.map((event: any) => (
+                <button
+                  key={event.id}
+                  type="button"
+                  onClick={() => setSelectedEvent(event)}
+                  className="group w-[280px] shrink-0 snap-start overflow-hidden rounded-3xl border border-gray-100 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:w-[320px]"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <Image
+                      src={event.images[0].src}
+                      alt={event.images[0].alt || event.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover transition duration-500 group-hover:scale-110"
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="text-xl font-bold text-white">
+                        {event.title}
+                      </h3>
+
+                      <p className="mt-1 text-sm text-white/80">
+                        {event.date}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <p className="line-clamp-2 text-sm text-gray-600">
+                      {event.subtitle}
+                    </p>
+
+                    <p className="mt-4 text-sm font-semibold text-blue-600">
+                      View Event →
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* =====================================================
+          VIDEOS
+      ===================================================== */}
+
+      <section className="relative z-10 px-6 py-16 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
+              Watch
+            </p>
+
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Videos
+            </h2>
+
+            <p className="mt-3 max-w-2xl text-gray-600">
+              Watch our events and memorable moments. Hover over a video to
+              start a preview.
+            </p>
+          </div>
+
+          <div className="grid gap-7 md:grid-cols-2">
+            {standardVideos.map((video) => (
+              <HoverVideo
+                key={video.id}
+                id={video.id}
+                title={video.title}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          FEATURED HIGHLIGHTS
+      ===================================================== */}
+
+      <section className="relative z-10 px-6 py-16 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600">
+              Shorts &amp; Reels
+            </p>
+
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Featured Highlights
+            </h2>
+
+            <p className="mt-3 max-w-2xl text-gray-600">
+              Quick highlights and short moments from WikiClub Tech.
+            </p>
+          </div>
+
+          <div className="relative">
+            <div
+              ref={highlightsTrackRef}
+              className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-5 [scrollbar-width:thin]"
+            >
+              {allHighlights.map((video) => (
+                <a
+                  key={video.id}
+                  href={
+                    video.platform === "youtube"
+                      ? `https://www.youtube.com/shorts/${video.id}`
+                      : `https://www.instagram.com/reel/${video.id}/`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  onMouseEnter={() => {
+                    if (video.platform === "youtube") {
+                      setHoveredHighlight(video.id);
+                    }
+                  }}
+                  onMouseLeave={() => setHoveredHighlight(null)}
+                  onFocus={() => {
+                    if (video.platform === "youtube") {
+                      setHoveredHighlight(video.id);
+                    }
+                  }}
+                  onBlur={() => setHoveredHighlight(null)}
+                  className="group w-[150px] shrink-0 snap-start overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-[180px]"
+                >
+                  <div className="relative aspect-[3/5] overflow-hidden bg-gray-100">
+                    {video.platform === "youtube" ? (
+                      <>
+                        <Image
+                          src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`}
+                          alt={video.title}
+                          fill
+                          sizes="(max-width: 640px) 150px, 180px"
+                          className={`object-cover transition duration-300 ${
+                            hoveredHighlight === video.id
+                              ? "opacity-0"
+                              : "opacity-100 group-hover:scale-105"
+                          }`}
+                        />
+
+                        {hoveredHighlight === video.id && (
+                          <iframe
+                            key={`highlight-preview-${video.id}`}
+                            src={`https://www.youtube.com/embed/${video.id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${video.id}&playsinline=1&rel=0`}
+                            title={`${video.title} preview`}
+                            allow="autoplay; encrypted-media; picture-in-picture"
+                            className="pointer-events-none absolute inset-0 h-full w-full border-0"
+                            tabIndex={-1}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <iframe
+                        src={`https://www.instagram.com/reel/${video.id}/embed`}
+                        title={video.title}
+                        loading="lazy"
+                        className="pointer-events-none absolute inset-0 h-full w-full border-0 bg-white"
+                        scrolling="no"
+                      />
+                    )}
+
+                    <span className="pointer-events-none absolute left-2 top-2 z-20 rounded bg-black/75 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                      {video.platform === "youtube" ? "Short" : "Reel"}
+                    </span>
+
+                    {hoveredHighlight !== video.id && (
+                      <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/10 transition group-hover:bg-black/20">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-lg text-gray-900 shadow-lg transition group-hover:scale-110">
+                          ▶
+                        </span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-3">
+                    <h3 className="truncate text-sm font-semibold text-gray-900">
+                      {video.title}
+                    </h3>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      {video.platform === "youtube"
+                        ? "YouTube Short"
+                        : "Instagram Reel"}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            <p className="mt-1 text-right text-xs text-gray-500">Scroll →</p>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          PHOTO LIGHTBOX
+      ===================================================== */}
 
       <AnimatePresence>
-        {selectedImage !== null && (
+        {selectedImage && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -203,401 +882,203 @@ export default function GalleryPage() {
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
             onClick={() => setSelectedImage(null)}
           >
-            {/* Close */}
-
             <button
               type="button"
               onClick={() => setSelectedImage(null)}
-              className="absolute right-5 top-5 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+              className="absolute right-5 top-5 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white backdrop-blur transition hover:bg-white/20"
+              aria-label="Close image"
             >
-              <FaTimes />
+              ×
             </button>
-
-            {/* Previous */}
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                previousImage();
-              }}
-              className="absolute left-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:left-8"
-            >
-              <FaArrowLeft />
-            </button>
-
-            {/* Image */}
 
             <motion.div
-              initial={{ scale: 0.9 }}
+              initial={{ scale: 0.85 }}
               animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
+              exit={{ scale: 0.85 }}
               transition={{ duration: 0.25 }}
-              className="relative max-h-[85vh] max-w-[85vw]"
-              onClick={(e) => e.stopPropagation()}
+              className="relative h-[85vh] w-full max-w-6xl"
+              onClick={(event) => event.stopPropagation()}
             >
               <Image
-                src={Images[selectedImage].src}
-                alt={Images[selectedImage].alt}
-                width={1400}
-                height={1000}
-                unoptimized
-                className="max-h-[85vh] w-auto rounded-2xl object-contain"
+                src={selectedImage}
+                alt="Gallery preview"
+                fill
+                sizes="100vw"
+                className="object-contain"
               />
-
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-sm text-white">
-                {selectedImage + 1} / {Images.length}
-              </div>
             </motion.div>
-
-            {/* Next */}
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                nextImage();
-              }}
-              className="absolute right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:right-8"
-            >
-              <FaArrowRight />
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* =========================================================
-          VIDEOS
-      ========================================================= */}
-
-      <section
-        id="videos"
-        className="px-6 py-20 sm:px-10 lg:px-20"
-      >
-        <div className="mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mb-10"
-          >
-            <p className="mb-2 text-sm font-bold uppercase tracking-[0.25em] text-blue-600">
-              Watch
-            </p>
-
-            <h2 className="text-4xl font-black text-black sm:text-5xl">
-              Videos
-            </h2>
-
-            <p className="mt-4 max-w-2xl text-gray-600">
-              Watch videos and highlights from WikiClub Tech.
-            </p>
-          </motion.div>
-
-          <div className="grid gap-7 md:grid-cols-2">
-            {videos.map((video, index) => (
-              <motion.article
-                key={video.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.5,
-                  delay: index * 0.1,
-                }}
-                onMouseEnter={() => setHoveredVideo(video.id)}
-                onMouseLeave={() => setHoveredVideo(null)}
-                className="group overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
-                {/* Thumbnail */}
-
-                <div className="relative aspect-video overflow-hidden bg-black">
-                  <Image
-                    src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
-                    alt={video.title}
-                    fill
-                    unoptimized
-                    className="object-cover transition duration-700 group-hover:scale-105"
-                  />
-
-                  <div className="absolute inset-0 bg-black/10 transition group-hover:bg-black/30" />
-
-                  {/* Play button */}
-
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition duration-300 group-hover:scale-110">
-                      <FaPlay className="ml-1" />
-                    </div>
-                  </div>
-
-                  {/* YouTube badge */}
-
-                  <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs font-bold text-red-600 backdrop-blur">
-                    <FaYoutube />
-                    YouTube
-                  </div>
-                </div>
-
-                {/* Text */}
-
-                <div className="p-6">
-                  <h3 className="text-xl font-black text-black">
-                    {video.title}
-                  </h3>
-
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    {video.description}
-                  </p>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          FLOATING VIDEO PREVIEW
-      ========================================================= */}
+      {/* =====================================================
+          MORE EVENT MODAL
+      ===================================================== */}
 
       <AnimatePresence>
-        {hoveredVideo && (
+        {selectedEvent && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 15 }}
-            transition={{ duration: 0.2 }}
-            className="pointer-events-none fixed left-1/2 top-1/2 z-[90] w-[min(720px,90vw)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[24px] border border-white/30 bg-black shadow-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:p-8"
+            onClick={() => setSelectedEvent(null)}
           >
-            <div className="relative aspect-video">
-              <iframe
-                className="h-full w-full"
-                src={`https://www.youtube.com/embed/${hoveredVideo}?autoplay=1&mute=1&controls=1&rel=0`}
-                title="Video preview"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
+            <motion.div
+              initial={{ y: 30, scale: 0.97 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 30, scale: 0.97 }}
+              className="mx-auto mt-10 max-w-6xl rounded-3xl bg-white p-6 shadow-2xl sm:p-8"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-7 flex items-start justify-between gap-5">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+                    {selectedEvent.title}
+                  </h2>
 
-              <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/70 px-3 py-2 text-xs font-semibold text-white backdrop-blur">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-                Playing preview
+                  <p className="mt-1 text-sm font-medium text-blue-600">
+                    {selectedEvent.date}
+                  </p>
+
+                  <p className="mt-3 text-gray-600">
+                    {selectedEvent.subtitle}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedEvent(null)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-700 transition hover:bg-gray-200"
+                  aria-label="Close event"
+                >
+                  ×
+                </button>
               </div>
-            </div>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {selectedEvent.images.map(
+                  (image: any, index: number) => (
+                    <button
+                      key={`${selectedEvent.id}-modal-${index}`}
+                      type="button"
+                      onClick={() => setSelectedImage(image.src)}
+                      className="group relative aspect-[4/3] overflow-hidden rounded-2xl"
+                    >
+                      <Image
+                        src={image.src}
+                        alt={
+                          image.alt ||
+                          `${selectedEvent.title} ${index + 1}`
+                        }
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover transition duration-500 group-hover:scale-110"
+                      />
+                    </button>
+                  )
+                )}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* =========================================================
-          FEATURED HIGHLIGHTS
-          SHORTS + REELS
-      ========================================================= */}
+      {/* =====================================================
+          STAY CONNECTED — YOUTUBE & INSTAGRAM
+      ===================================================== */}
 
-      <section
-        id="highlights"
-        className="px-6 py-20 sm:px-10 lg:px-20"
-      >
+      <section className="relative z-10 px-6 pt-8 pb-0 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-7xl">
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="mb-10"
-          >
-            <p className="mb-2 text-sm font-bold uppercase tracking-[0.25em] text-blue-600">
-              Short Form
+          <div className="overflow-hidden rounded-3xl bg-[#121824] px-6 py-12 text-center shadow-xl sm:px-12 sm:py-16">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-blue-400">
+              Join Our Community
             </p>
 
-            <h2 className="text-4xl font-black text-black sm:text-5xl">
-              Featured Highlights
+            <h2 className="text-3xl font-bold text-white sm:text-4xl">
+              Stay Connected With WikiClub Tech
             </h2>
 
-            <p className="mt-4 max-w-2xl text-gray-600">
-              Quick moments from WikiClub Tech on YouTube Shorts and
-              Instagram Reels.
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-gray-300 sm:text-base">
+              Follow us on social media for event highlights, memorable
+              moments, behind-the-scenes content, and the latest updates
+              from WikiClub Tech UU.
             </p>
-          </motion.div>
 
-          {/* Horizontal Shelf */}
-
-          <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
-            {highlights.map((highlight, index) => {
-              const highlightKey = `${highlight.type}-${highlight.id}`;
-
-              return (
-                <motion.article
-                  key={highlightKey}
-                  initial={{ opacity: 0, x: 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    duration: 0.5,
-                    delay: index * 0.1,
-                  }}
-                  onMouseEnter={() =>
-                    setHoveredHighlight(highlightKey)
-                  }
-                  onMouseLeave={() => setHoveredHighlight(null)}
-                  className="group w-[290px] shrink-0 overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-[330px]"
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              {/* YouTube Channel */}
+              <a
+                href="https://www.youtube.com/@wikiclubtechuu"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex w-full max-w-xs items-center justify-center gap-3 rounded-xl bg-white px-7 py-4 font-semibold text-gray-900 shadow-lg transition duration-300 hover:-translate-y-1 hover:bg-red-50 hover:shadow-red-500/20 sm:w-auto"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="#FF0000"
+                  className="h-7 w-7 shrink-0"
+                  aria-hidden="true"
                 >
-                  {/* =================================================
-                      VIDEO AREA
-                  ================================================= */}
+                  <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z" />
+                </svg>
 
-                  <div className="relative aspect-[9/16] overflow-hidden bg-black">
-                    {/* -------------------------------------------------
-                        YOUTUBE SHORT
-                    ------------------------------------------------- */}
+                <span className="text-left">
+                  <span className="block text-base">YouTube Channel</span>
+                  <span className="block text-xs font-normal text-gray-500">
+                    Watch our videos
+                  </span>
+                </span>
+              </a>
 
-                    {highlight.type === "youtube" && (
-                      <>
-                        {/* Thumbnail when NOT hovered */}
+              {/* Instagram Profile */}
+              <a
+                href="https://www.instagram.com/wikiclubtech.uu/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex w-full max-w-xs items-center justify-center gap-3 rounded-xl bg-white px-7 py-4 font-semibold text-gray-900 shadow-lg transition duration-300 hover:-translate-y-1 hover:bg-pink-50 hover:shadow-pink-500/20 sm:w-auto"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="url(#instagram-gradient)"
+                  strokeWidth="2"
+                  className="h-7 w-7 shrink-0"
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <linearGradient
+                      id="instagram-gradient"
+                      x1="0%"
+                      y1="100%"
+                      x2="100%"
+                      y2="0%"
+                    >
+                      <stop offset="0%" stopColor="#FFDC80" />
+                      <stop offset="50%" stopColor="#E1306C" />
+                      <stop offset="100%" stopColor="#833AB4" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="3" y="3" width="18" height="18" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r="1" fill="#E1306C" />
+                </svg>
 
-                        {hoveredHighlight !== highlightKey && (
-                          <Image
-                            src={`https://img.youtube.com/vi/${highlight.id}/maxresdefault.jpg`}
-                            alt={highlight.title}
-                            fill
-                            unoptimized
-                            className="object-cover transition duration-500 group-hover:scale-105"
-                          />
-                        )}
+                <span className="text-left">
+                  <span className="block text-base">Instagram Page</span>
+                  <span className="block text-xs font-normal text-gray-500">
+                    Explore our reels
+                  </span>
+                </span>
+              </a>
+            </div>
 
-                        {/* YouTube iframe when hovered */}
-
-                        {hoveredHighlight === highlightKey && (
-                          <iframe
-                            className="absolute inset-0 h-full w-full"
-                            src={`https://www.youtube.com/embed/${highlight.id}?autoplay=1&mute=1&controls=1&rel=0`}
-                            title={highlight.title}
-                            allow="autoplay; encrypted-media; picture-in-picture"
-                            allowFullScreen
-                          />
-                        )}
-
-                        {/* Play button */}
-
-                        {hoveredHighlight !== highlightKey && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-xl transition duration-300 group-hover:scale-110">
-                              <FaPlay className="ml-1" size={16} />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Badge */}
-
-                        <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs font-bold text-red-600 backdrop-blur">
-                          <FaYoutube />
-                          YouTube Short
-                        </div>
-                      </>
-                    )}
-
-                    {/* -------------------------------------------------
-                        INSTAGRAM REEL
-                    ------------------------------------------------- */}
-
-                    {highlight.type === "instagram" && (
-                      <>
-                        {/* Instagram iframe only when hovered */}
-
-                        {hoveredHighlight === highlightKey ? (
-                          <iframe
-                            className="absolute inset-0 h-full w-full"
-                            src={`https://www.instagram.com/reel/${highlight.id}/embed`}
-                            title={highlight.title}
-                            allow="autoplay; encrypted-media; picture-in-picture"
-                            allowFullScreen
-                          />
-                        ) : (
-                          /* Instagram preview before hover */
-                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-pink-100 via-white to-purple-100">
-                            <FaInstagram
-                              size={55}
-                              className="mb-5 text-pink-600"
-                            />
-
-                            <span className="text-sm font-bold text-gray-700">
-                              Hover to play Reel
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Badge */}
-
-                        <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs font-bold text-pink-600 backdrop-blur">
-                          <FaInstagram />
-                          Instagram Reel
-                        </div>
-                      </>
-                    )}
-
-                    {/* Playing indicator */}
-
-                    <AnimatePresence>
-                      {hoveredHighlight === highlightKey && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-black/70 px-3 py-2 text-xs font-semibold text-white backdrop-blur"
-                        >
-                          <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-                          Playing
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* =================================================
-                      TEXT
-                  ================================================= */}
-
-                  <div className="p-5">
-                    <h3 className="text-lg font-black text-black">
-                      {highlight.title}
-                    </h3>
-
-                    <p className="mt-2 text-sm leading-6 text-gray-600">
-                      {highlight.description}
-                    </p>
-                  </div>
-                </motion.article>
-              );
-            })}
+            <p className="mt-10 text-xs text-gray-500">
+              © WikiClub Tech UU · United University
+            </p>
           </div>
         </div>
-      </section>
-
-      {/* =========================================================
-          BOTTOM CTA
-      ========================================================= */}
-
-      <section className="px-6 pb-24 pt-10 sm:px-10 lg:px-20">
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto max-w-7xl overflow-hidden rounded-[32px] bg-[#18252f] px-8 py-14 text-center text-white sm:px-12"
-        >
-          <h2 className="text-3xl font-black sm:text-4xl">
-            More memories are waiting.
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-xl text-gray-300">
-            Explore the gallery and discover more moments from WikiClub
-            Tech.
-          </p>
-
-          <a
-            href="#photo-gallery"
-            className="mt-7 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-[#18252f] transition hover:scale-105"
-          >
-            Explore Gallery
-          </a>
-        </motion.div>
       </section>
     </main>
   );

@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
         hostname: "api.qrserver.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "img.youtube.com",
+        pathname: "/**",
+      },
     ],
   },
 };
